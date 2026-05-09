@@ -1,4 +1,43 @@
+// import { NextRequest, NextResponse } from 'next/server';
+
+// export async function POST(request: NextRequest) {
+//   try {
+//     const formData = await request.formData();
+//     const file = formData.get('file') as File | null;
+
+//     if (!file) {
+//       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+//     }
+
+//     if (file.type !== 'application/pdf') {
+//       return NextResponse.json({ error: 'Only PDF files are accepted' }, { status: 400 });
+//     }
+
+//     // Extract text from PDF (placeholder - use pdf-parse library)
+//     const arrayBuffer = await file.arrayBuffer();
+//     const buffer = Buffer.from(arrayBuffer);
+    
+//     // pdf-parse would be used here in production
+//     const textContent = `[Extracted text from: ${file.name}]`;
+
+//     return NextResponse.json({
+//       fileName: file.name,
+//       fileSize: file.size,
+//       textContent,
+//       message: 'Resume uploaded successfully!',
+//     });
+//   } catch (error) {
+//     console.error('Upload error:', error);
+//     return NextResponse.json(
+//       { error: 'Failed to upload resume' },
+//       { status: 500 }
+//     );
+//   }
+// }
+
 import { NextRequest, NextResponse } from 'next/server';
+
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,12 +52,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only PDF files are accepted' }, { status: 400 });
     }
 
-    // Extract text from PDF (placeholder - use pdf-parse library)
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    
-    // pdf-parse would be used here in production
-    const textContent = `[Extracted text from: ${file.name}]`;
+
+    const { extractText } = await import('unpdf');
+    const { text } = await extractText(new Uint8Array(arrayBuffer), { mergePages: true });
+
+    const textContent = text?.trim() || '';
+
+    if (!textContent) {
+      return NextResponse.json(
+        { error: 'Could not extract text from this PDF. It may be image-based or scanned.' },
+        { status: 422 }
+      );
+    }
 
     return NextResponse.json({
       fileName: file.name,
@@ -26,12 +72,12 @@ export async function POST(request: NextRequest) {
       textContent,
       message: 'Resume uploaded successfully!',
     });
+
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json(
-      { error: 'Failed to upload resume' },
+      { error: 'Failed to process PDF. Please try a different file.' },
       { status: 500 }
     );
   }
 }
-
