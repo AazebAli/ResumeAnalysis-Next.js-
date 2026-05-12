@@ -282,7 +282,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             onClick={() => { sessionStorage.clear(); router.push('/'); }}
             style={{
               width: '100%', padding: '20px 24px',
-              borderTop: `1px solid ${C.border}`,
               background: 'transparent',
               display: 'flex', alignItems: 'center', gap: 10,
               cursor: 'pointer', border: 'none',
